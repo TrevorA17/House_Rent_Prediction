@@ -171,3 +171,57 @@ ggplot(HouseRentData, aes(x = Furnishing_Status, y = Rent, fill = Furnishing_Sta
        x = "Furnishing Status",
        y = "Rent") +
   theme_minimal()
+
+# Load necessary libraries
+library(ggplot2)
+library(corrplot)
+library(dplyr)
+
+# Univariate Plots
+
+# Histogram for numeric variable (e.g., Rent)
+ggplot(HouseRentData, aes(x = Rent)) +
+  geom_histogram(binwidth = 5000, fill = "blue", color = "black") +
+  labs(title = "Histogram of Rent", x = "Rent (₹)", y = "Frequency") +
+  theme_minimal()
+
+# Boxplot for numeric variable (e.g., Size)
+ggplot(HouseRentData, aes(y = Size)) +
+  geom_boxplot(fill = "orange", color = "black") +
+  labs(title = "Boxplot of House Size", y = "Size (sq ft)") +
+  theme_minimal()
+
+# Bar plot for categorical variable (e.g., Furnishing_Status)
+ggplot(HouseRentData, aes(x = Furnishing_Status)) +
+  geom_bar(fill = "purple", color = "black") +
+  labs(title = "Bar Plot of Furnishing Status", x = "Furnishing Status", y = "Count") +
+  theme_minimal()
+
+# Multivariate Plots
+
+# Scatter plot for two numeric variables (e.g., Size vs. Rent)
+ggplot(HouseRentData, aes(x = Size, y = Rent)) +
+  geom_point(color = "blue", alpha = 0.6) +
+  geom_smooth(method = "lm", color = "red", se = FALSE) +
+  labs(title = "Scatter Plot of Size vs Rent", x = "Size (sq ft)", y = "Rent (₹)") +
+  theme_minimal()
+
+# Boxplot for numeric variable grouped by categorical variable (e.g., Rent by Furnishing_Status)
+ggplot(HouseRentData, aes(x = Furnishing_Status, y = Rent, fill = Furnishing_Status)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of Rent by Furnishing Status", x = "Furnishing Status", y = "Rent (₹)") +
+  theme_minimal()
+
+# Faceted plots to compare distributions (e.g., Rent distribution by City)
+ggplot(HouseRentData, aes(x = Rent)) +
+  geom_histogram(binwidth = 5000, fill = "green", color = "black") +
+  facet_wrap(~City) +
+  labs(title = "Histogram of Rent by City", x = "Rent (₹)", y = "Frequency") +
+  theme_minimal()
+
+# Heatmap of correlation matrix (numeric variables)
+numeric_columns <- HouseRentData %>%
+  select_if(is.numeric)
+correlation_matrix <- cor(numeric_columns, use = "complete.obs")
+corrplot(correlation_matrix, method = "color", type = "upper", tl.col = "black")
+
