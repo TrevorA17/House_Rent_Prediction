@@ -1,0 +1,383 @@
+---
+title: "House Rent Prediction"
+author: "Trevor Okinda"
+date: "2024"
+output:
+  github_document: 
+    toc: yes
+    toc_depth: 4
+    fig_width: 6
+    fig_height: 4
+    df_print: default
+editor_options:
+  chunk_output_type: console
+---
+
+# Student Details
+
+|                                              |     |
+|----------------------------------------------|-----|
+| **Student ID Number**                        | 134780 |
+| **Student Name**                             | Trevor Okinda |
+| **BBIT 4.2 Group**                           | C |
+| **Project Name**                             | House Rent Prediction |
+
+# Setup Chunk
+
+**Note:** the following KnitR options have been set as the global defaults: <BR> `knitr::opts_chunk$set(echo = TRUE, warning = FALSE, eval = TRUE, collapse = FALSE, tidy = TRUE)`.
+
+More KnitR options are documented here <https://bookdown.org/yihui/rmarkdown-cookbook/chunk-options.html> and here <https://yihui.org/knitr/options/>.
+
+```{r setup, include=FALSE}
+library(formatR)
+knitr::opts_chunk$set(
+  warning = FALSE,
+  collapse = FALSE
+)
+```
+
+### Source: 
+
+The dataset that was used can be downloaded here: *\<https://www.kaggle.com/datasets/iamsouravbanerjee/house-rent-prediction-dataset?select=House_Rent_Dataset.csv\>*
+
+### Reference:
+
+*\<Banerjee, S. (n.d.). House Rent Prediction Dataset [Data set]. Kaggle. https://www.kaggle.com/datasets/iamsouravbanerjee/house-rent-prediction-dataset?select=House_Rent_Dataset.csv\>\
+Refer to the APA 7th edition manual for rules on how to cite datasets: <https://apastyle.apa.org/style-grammar-guidelines/references/examples/data-set-references>*
+
+# Understanding the Dataset (Exploratory Data Analysis (EDA))
+
+## Loading the Dataset
+```{r loading dataset}
+# Load the dataset
+HouseRentData <- read.csv("House_Rent_Dataset.csv", colClasses = c(
+  BHK = "numeric",                     # Number of bedrooms
+  Rent = "numeric",                    # Rent amount
+  Size = "numeric",                    # Size in square feet
+  Area_Type = "factor",                # Type of area (e.g., Super Area)
+  Area_Locality = "factor",         # Locality name
+  City = "factor",                     # City name
+  Furnishing_Status = "factor",        # Furnishing status (e.g., Furnished)
+  Tenant_Preferred = "factor",         # Tenant preference
+  Bathroom = "numeric",                # Number of bathrooms
+  Point_of_Contact = "factor"       # Point of contact information
+))
+
+# Display structure to verify data types
+str(HouseRentData)
+
+# Display first few rows to ensure data is loaded correctly
+head(HouseRentData)
+
+# Optional: View the dataset in spreadsheet-like interface
+View(HouseRentData)
+```
+
+## Measures of Frequency
+```{r MOF}
+# Load necessary libraries
+library(dplyr)  # For data manipulation
+library(ggplot2)  # For visualizations
+library(corrplot)  # For correlation plots
+
+# Assuming `HouseRentData` is already loaded
+
+# Measures of Frequency
+# Frequency distribution for categorical variables
+frequency_analysis <- function(data, column_name) {
+  return(data %>%
+           group_by(!!sym(column_name)) %>%
+           summarize(Frequency = n()) %>%
+           arrange(desc(Frequency)))
+}
+
+# Example: Frequency of cities
+city_frequency <- frequency_analysis(HouseRentData, "City")
+print(city_frequency)
+```
+
+## Measures of Central Tendency
+```{r MOCT}
+# Measures of Central Tendency
+# Mean, Median, Mode
+mean_rent <- mean(HouseRentData$Rent, na.rm = TRUE)
+median_rent <- median(HouseRentData$Rent, na.rm = TRUE)
+mode_rent <- as.numeric(names(sort(table(HouseRentData$Rent), decreasing = TRUE)[1]))
+
+cat("Mean Rent:", mean_rent, "\n")
+cat("Median Rent:", median_rent, "\n")
+cat("Mode Rent:", mode_rent, "\n")
+```
+
+## Measures of Distribution
+```{r MOD}
+# Measures of Distribution
+# Range, Variance, Standard Deviation, Interquartile Range
+range_rent <- range(HouseRentData$Rent, na.rm = TRUE)
+variance_rent <- var(HouseRentData$Rent, na.rm = TRUE)
+sd_rent <- sd(HouseRentData$Rent, na.rm = TRUE)
+iqr_rent <- IQR(HouseRentData$Rent, na.rm = TRUE)
+
+cat("Range of Rent:", range_rent, "\n")
+cat("Variance of Rent:", variance_rent, "\n")
+cat("Standard Deviation of Rent:", sd_rent, "\n")
+cat("Interquartile Range of Rent:", iqr_rent, "\n")
+```
+
+## Measures of Relationship
+```{r MOR}
+# Measures of Relationship
+# Correlation Matrix
+# Selecting numeric variables for correlation
+numeric_columns <- HouseRentData %>%
+  select_if(is.numeric)
+
+correlation_matrix <- cor(numeric_columns, use = "complete.obs")
+print(correlation_matrix)
+
+# Correlation heatmap
+corrplot(correlation_matrix, method = "circle", type = "upper", tl.col = "black")
+
+# Example: Scatter plot to visualize relationship
+ggplot(HouseRentData, aes(x = Size, y = Rent)) +
+  geom_point(color = "blue") +
+  geom_smooth(method = "lm", col = "red") +
+  labs(title = "Relationship between Size and Rent",
+       x = "Size (sq ft)",
+       y = "Rent (₹)")
+```
+
+## ANOVA
+```{r ANOVA}
+# Check structure of the dataset
+str(HouseRentData)
+
+# Perform one-way ANOVA
+anova_result <- aov(Rent ~ Furnishing_Status, data = HouseRentData)
+
+# Display ANOVA summary
+summary(anova_result)
+
+# Post-hoc test (if ANOVA is significant, use Tukey's HSD to determine pairwise differences)
+tukey_result <- TukeyHSD(anova_result)
+print(tukey_result)
+```
+
+## Plots
+```{r plots}
+# Visualize group means
+ggplot(HouseRentData, aes(x = Furnishing_Status, y = Rent, fill = Furnishing_Status)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of Rent by Furnishing Status",
+       x = "Furnishing Status",
+       y = "Rent") +
+  theme_minimal()
+
+# Load necessary libraries
+library(ggplot2)
+library(corrplot)
+library(dplyr)
+
+# Univariate Plots
+
+# Histogram for numeric variable (e.g., Rent)
+ggplot(HouseRentData, aes(x = Rent)) +
+  geom_histogram(binwidth = 5000, fill = "blue", color = "black") +
+  labs(title = "Histogram of Rent", x = "Rent (₹)", y = "Frequency") +
+  theme_minimal()
+
+# Boxplot for numeric variable (e.g., Size)
+ggplot(HouseRentData, aes(y = Size)) +
+  geom_boxplot(fill = "orange", color = "black") +
+  labs(title = "Boxplot of House Size", y = "Size (sq ft)") +
+  theme_minimal()
+
+# Bar plot for categorical variable (e.g., Furnishing_Status)
+ggplot(HouseRentData, aes(x = Furnishing_Status)) +
+  geom_bar(fill = "purple", color = "black") +
+  labs(title = "Bar Plot of Furnishing Status", x = "Furnishing Status", y = "Count") +
+  theme_minimal()
+
+# Multivariate Plots
+
+# Scatter plot for two numeric variables (e.g., Size vs. Rent)
+ggplot(HouseRentData, aes(x = Size, y = Rent)) +
+  geom_point(color = "blue", alpha = 0.6) +
+  geom_smooth(method = "lm", color = "red", se = FALSE) +
+  labs(title = "Scatter Plot of Size vs Rent", x = "Size (sq ft)", y = "Rent (₹)") +
+  theme_minimal()
+
+# Boxplot for numeric variable grouped by categorical variable (e.g., Rent by Furnishing_Status)
+ggplot(HouseRentData, aes(x = Furnishing_Status, y = Rent, fill = Furnishing_Status)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of Rent by Furnishing Status", x = "Furnishing Status", y = "Rent (₹)") +
+  theme_minimal()
+
+# Faceted plots to compare distributions (e.g., Rent distribution by City)
+ggplot(HouseRentData, aes(x = Rent)) +
+  geom_histogram(binwidth = 5000, fill = "green", color = "black") +
+  facet_wrap(~City) +
+  labs(title = "Histogram of Rent by City", x = "Rent (₹)", y = "Frequency") +
+  theme_minimal()
+
+# Heatmap of correlation matrix (numeric variables)
+numeric_columns <- HouseRentData %>%
+  select_if(is.numeric)
+correlation_matrix <- cor(numeric_columns, use = "complete.obs")
+corrplot(correlation_matrix, method = "color", type = "upper", tl.col = "black")
+
+
+```
+
+# Preprocessing & Data Transformation
+## Missing Values
+```{r Missing Values}
+# Check for missing values in the dataset
+
+# Summarize missing values for each column
+missing_summary <- colSums(is.na(HouseRentData))
+
+# Display the summary of missing values
+print(missing_summary)
+
+# Check if there are any missing values in the entire dataset
+any_missing <- any(is.na(HouseRentData))
+cat("Are there any missing values in the dataset? ", any_missing, "\n")
+
+# Visualize missing values (optional, requires the 'naniar' library)
+library(naniar)
+
+# Plot missing values
+gg_miss_var(HouseRentData) +
+  labs(title = "Missing Values by Variable",
+       x = "Variables", y = "Number of Missing Values") +
+  theme_minimal()
+
+```
+
+# Training Model
+## Data Splitting
+```{r Data Splitting}
+# Load necessary library
+library(caret)
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Data Splitting: Split data into training (70%) and testing (30%)
+trainIndex <- createDataPartition(HouseRentData$Rent, p = 0.7, list = FALSE)
+trainData <- HouseRentData[trainIndex, ]
+testData <- HouseRentData[-trainIndex, ]
+cat("Training data rows:", nrow(trainData), "\n")
+cat("Testing data rows:", nrow(testData), "\n")
+```
+
+## Bootstrapping
+```{r Bootstrapping}
+# Bootstrapping: Create bootstrapped samples
+bootstrapSamples <- createResample(HouseRentData$Rent, times = 1000, list = TRUE)
+bootstrapMeans <- sapply(bootstrapSamples, function(indices) {
+  mean(HouseRentData$Rent[indices], na.rm = TRUE)
+})
+cat("Bootstrap Means Summary:\n")
+print(summary(bootstrapMeans))
+```
+
+## Cross-validation
+```{r Cross-validation}
+# Basic Cross-Validation: 5-fold CV
+trainControlCV <- trainControl(method = "cv", number = 5)
+cvModel <- train(Rent ~ ., data = trainData, method = "lm", trControl = trainControlCV)
+cat("Basic CV Model Summary:\n")
+print(cvModel)
+
+```
+
+## Training Different Models
+```{r Different Models}
+# Load necessary libraries
+library(caret)
+library(glmnet)
+library(randomForest)
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Linear Regression (LM)
+lm_model <- train(Rent ~ ., data = trainData, method = "lm")
+cat("Linear Regression Model Summary:\n")
+print(lm_model)
+
+# Ridge Regression (using glmnet)
+ridge_model <- train(Rent ~ ., data = trainData, method = "glmnet", 
+                     tuneGrid = expand.grid(alpha = 0, lambda = seq(0.001, 0.1, by = 0.001)))
+cat("Ridge Regression Model Summary:\n")
+print(ridge_model)
+
+# Random Forest Regression (using randomForest package)
+rf_model <- randomForest(Rent ~ ., data = trainData)
+cat("Random Forest Regression Model Summary:\n")
+print(rf_model)
+
+# Optional: Predicting using the models on the test set
+lm_predictions <- predict(lm_model, newdata = testData)
+ridge_predictions <- predict(ridge_model, newdata = testData)
+rf_predictions <- predict(rf_model, newdata = testData)
+
+# Evaluate performance of models (using RMSE as example)
+lm_rmse <- sqrt(mean((lm_predictions - testData$Rent)^2))
+ridge_rmse <- sqrt(mean((ridge_predictions - testData$Rent)^2))
+rf_rmse <- sqrt(mean((rf_predictions - testData$Rent)^2))
+
+cat("Linear Regression RMSE:", lm_rmse, "\n")
+cat("Ridge Regression RMSE:", ridge_rmse, "\n")
+cat("Random Forest Regression RMSE:", rf_rmse, "\n")
+```
+
+## Performance Comparison with resamples
+```{r Performance Comparison}
+# Combine the models into a list for resampling
+model_list <- list(LM = lm_model, Ridge = ridge_model, RF = rf_model)
+
+# Resampling to compare the models
+resamples_results <- resamples(model_list)
+
+# Summary of resamples for performance comparison
+summary(resamples_results)
+
+# Boxplot to visually compare the model performances
+bwplot(resamples_results, metric = "RMSE") # Boxplot of RMSE for all models
+bwplot(resamples_results, metric = "Rsquared") # Boxplot of R-squared for all models
+```
+
+## Saving Model
+```{r Saving Model}
+# Saving the Ridge Regression model
+saveRDS(ridge_model, "./models/saved_ridge_model.rds")
+
+# Load the saved Ridge Regression model
+loaded_ridge_model <- readRDS("./models/saved_ridge_model.rds")
+
+# Example new data for prediction (adjust based on your features)
+new_data <- data.frame(
+  BHK = 2,                       # Number of bedrooms
+  Size = 1000,                    # Size in square feet
+  Floor = "1 out of 3",           # Floor information
+  Area_Type = "Super Area",       # Type of area
+  Area_Locality = "Salt Lake City", # Locality name
+  City = "Kolkata",               # City name
+  Furnishing_Status = "Semi-Furnished", # Furnishing status
+  Tenant_Preferred = "Bachelors/Family", # Tenant preference
+  Bathroom = 1,                    # Number of bathrooms
+  Point_of_Contact = "Contact Owner" # Point of contact (ensure this is included)
+  
+)
+
+# Use the loaded model to make predictions
+predictions_loaded_model <- predict(loaded_ridge_model, newdata = new_data)
+
+# Print predictions
+print(predictions_loaded_model)
+
+```
+
